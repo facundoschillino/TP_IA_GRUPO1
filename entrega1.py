@@ -3,9 +3,7 @@ from simpleai.search import (
     greedy, astar,
     )
 
-from simpleai.search.viewers import (BaseViewer, WebViewer)
-
-import itertools
+from simpleai.search.viewers import (WebViewer)
 
 INITIAL_STATE = (
         ("verde", "azul", "rojo", "naranja"),     # frasco 1, notar el orden de los colores
@@ -20,10 +18,13 @@ INITIAL_STATE = (
 
 def esta_cerrado (frasco):
     un_color = set(frasco)
-    return len(frasco) == 4 and len(un_color) == 1
+    return esta_lleno(frasco) and len(un_color) == 1
 
 def esta_vacio (frasco):
-    return len(frasco) > 0
+    return len(frasco) == 0
+
+def esta_lleno (frasco):
+    return len(frasco) == 4
 
 def color_superior(frasco):
     indice_color_superior = len(frasco) - 1
@@ -34,7 +35,6 @@ class SortEmAll(SearchProblem):
 
     def actions(self, state):
         frascos = state
-        # Vamos a tener que ver el color del ultimo item y determinar a que frasco lo podemos a trasvasar
         actions = []
         # Recorro la lista de frascos, para ver desde que frasco puedo trasvasar
         for indice_origen, frasco_origen in enumerate(frascos):
@@ -55,61 +55,64 @@ class SortEmAll(SearchProblem):
         return actions
     
     def result(self, state, action):
-        origen,destino = action
-        state = list(state)
-        frasco_origen = list(state[origen])
-        frasco_destino = list(state[destino])
-        color_a_trasvasar = frasco_origen[len(frasco_origen)-1]
-        cantidad_al_final = 0
+        origen, destino = action
+
+        frascos = [list(frasco) for frasco in state]
+
+        frasco_origen = frascos[origen]
+        frasco_destino = frascos[destino]
+
+        color_a_trasvasar = color_superior(frasco_origen)
+
+        # Obtengo los cuartos en origen que puedo trasvasar
+        cuartos_en_origen = 0
         for color in frasco_origen:
             if color == color_a_trasvasar:
-                cantidad_al_final += 1
+                cuartos_en_origen += 1
             else:
-                cantidad_al_final = 0
-        #Hasta acá lo que hice fue ver cuantas unidades de ese color tengo al final, osea, cuantas puedo trasvasar.
-        if (len(frasco_destino) == 0): ##Este es para trasvasar a uno vacio
-             for _ in range(cantidad_al_final):
-                color_sustraido = frasco_origen.pop()
-                frasco_destino.append(color_sustraido)
-        else: #Este es para cuando destino no esta vacio y tengo que contar cuantos puedo trasvasar
-             faltante_destino = 4 - len(frasco_destino)
-             if (faltante_destino >= cantidad_al_final):
-                for _ in range(cantidad_al_final):
-                    color_sustraido = frasco_origen.pop()
-                    frasco_destino.append(color_sustraido)
-             else:
-                  while (len(frasco_destino) < 4):
-                    color_sustraido = frasco_origen.pop()
-                    frasco_destino.append(color_sustraido)                 
-        frasco_origen = tuple(frasco_origen)
-        frasco_destino = tuple(frasco_destino)
-        state[origen] = frasco_origen
-        state[destino] = frasco_destino
-        return tuple(state)
+                cuartos_en_origen = 0
+        
+        # Trasvaso hasta agotar los cuartos o llenar el destino
+        for _ in range(cuartos_en_origen):
+            color_sustraido = frasco_origen.pop()
+            frasco_destino.append(color_sustraido)
+            if esta_lleno(frasco_destino):
+                break
+
+        frascos = tuple(tuple(frasco) for frasco in frascos)
+        return frascos
     
-    def cost(self, state, actions, state1): #Por lo que entiendo, lo que hay que minimizar son los movimientos, asi que cada accion vale 1
+    #Por lo que entiendo, lo que hay que minimizar son los movimientos, asi que cada accion vale 1
+    def cost(self, state, action, state2):
         return 1  
     
-    def is_goal(self, state): # Esto no se si esta bien, es una idea
-        for frasco in state:
-            if len(frasco) > 0 and not esta_cerrado(frasco):
+    def is_goal(self, state):
+        frascos = state
+        for frasco in frascos:
+            if not esta_vacio(frasco) and not esta_cerrado(frasco):
                 return False
         return True
     
-    def heuristic(self,state): #Solo voy a contar los frascos que no estan cerrados
-        no_cerrados = 0
-        for frasco in state:
-            if len(frasco) >0 and not esta_cerrado(frasco):
-                no_cerrados +=1
-        return no_cerrados
+    def heuristic(self, state):
+        # Busca la cantidad de colores diferentes en los frascos no llenos ni vacios
+        frascos = state
+        costo_total = 0
+        for frasco in frascos:
+            if not esta_vacio(frasco) and not esta_cerrado(frasco):
+                # Cuento la cantidad de colores distintos
+                colores = []
+                for color in frasco:
+                    if color not in colores:
+                        colores.append(color)
+                # Resto uno para que no sobreestime
+                cantidad_colores_distintos = len(colores) - 1
+                costo_total += cantidad_colores_distintos
+        return costo_total
 
 my_problem = SortEmAll(INITIAL_STATE)
 
-#v = BaseViewer()
-
-v = WebViewer()
-
-result = astar(my_problem, viewer=v)
+#result = astar(my_problem, viewer=WebViewer())
+result = greedy(my_problem, graph_search=True)
 
 if result is None:
     print("No solution")

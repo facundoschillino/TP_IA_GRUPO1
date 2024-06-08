@@ -15,7 +15,8 @@ def jugar(frascos, dificil):
         result = astar(problem, graph_search=True)
     pasos = []
     for paso, _ in result.path():
-        pasos.append(paso)
+        if paso:
+            pasos.append(paso)
     return pasos
 
 def esta_cerrado (frasco):
@@ -34,7 +35,6 @@ def color_superior(frasco):
     return color_superior
 
 class SortEmAll(SearchProblem):
-
     def actions(self, state):
         frascos = state
         actions = []
@@ -49,15 +49,17 @@ class SortEmAll(SearchProblem):
                         if len(frasco_destino) < 4:
                             # Agrego los frascos vacios
                             if len(frasco_destino) == 0:
-                                actions.append((indice_origen, indice_destino))
+                                actions.append((indice_origen + 1, indice_destino + 1))
                             # Agrego los frascos que tienen el mismo color superior
                             elif color_superior(frasco_origen) == color_superior(frasco_destino): 
-                                actions.append((indice_origen, indice_destino))
+                                actions.append((indice_origen + 1, indice_destino + 1))
 
         return actions
     
     def result(self, state, action):
         origen, destino = action
+        origen -= 1
+        destino -= 1
 
         frascos = [list(frasco) for frasco in state]
 

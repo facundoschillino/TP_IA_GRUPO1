@@ -5,16 +5,18 @@ from simpleai.search import (
 
 from simpleai.search.viewers import (WebViewer)
 
-INITIAL_STATE = (
-        ("verde", "azul", "rojo", "naranja"),     # frasco 1, notar el orden de los colores
-        ("azul", "rosa", "naranja"),              # frasco 2, notar que es de largo 3, queda un espacio vacío
-        ("rosa", "celeste", "verde", "verde"),    # frasco 3, notar cómo "verde" se repite 2 veces por los 2 cuartos iguales
-        ("rosa", "rojo", "celeste", "celeste"),   # frasco 4
-        ("rojo", "azul", "lila"),                 # frasco 5
-        ("verde", "naranja", "celeste", "rojo"),  # frasco 6
-        ("azul", "naranja", "rosa"),              # frasco 7
-        ("lila", "lila", "lila"),                 # frasco 8, notar la repetición de colores para cada cuarto
-        ())
+def jugar(frascos, dificil):
+    problem = SortEmAll(frascos)
+    if dificil == True:
+        #Utilizo busqueda avara
+        result = greedy(problem, graph_search=True)
+    else:
+        #Utilizo a estrella
+        result = astar(problem, graph_search=True)
+    pasos = []
+    for paso, _ in result.path():
+        pasos.append(paso)
+    return pasos
 
 def esta_cerrado (frasco):
     un_color = set(frasco)
@@ -108,27 +110,3 @@ class SortEmAll(SearchProblem):
                 cantidad_colores_distintos = len(colores) - 1
                 costo_total += cantidad_colores_distintos
         return costo_total
-
-my_problem = SortEmAll(INITIAL_STATE)
-
-#result = astar(my_problem, viewer=WebViewer())
-result = greedy(my_problem, graph_search=True)
-
-if result is None:
-    print("No solution")
-else:
-    for action, state in result.path():
-        print("A:", action)
-        print("S:")
-        print(*state, sep="\n")
-    print("Final cost:", result.cost)           
-
-
-
-
-
-
-
-    
-
-

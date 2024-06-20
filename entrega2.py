@@ -140,7 +140,7 @@ def armar_nivel(colores, contenidos_parciales):
     #solucion = backtrack(problema)
     #Con 47000 como limite de iteraciones llega justo
     #Con 45000 tambien
-    solucion = min_conflicts(problema, iterations_limit=50000)
+    solucion = min_conflicts(problema, iterations_limit=45000)
 
     frascos_armados = []
     

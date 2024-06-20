@@ -1,21 +1,26 @@
 from simpleai.search import (
     CspProblem,
+    backtrack,
     min_conflicts,
+    MOST_CONSTRAINED_VARIABLE,
+    LEAST_CONSTRAINING_VALUE
     )
 
 from itertools import combinations
 
 def generar_variables(n):  
-    tupla_tuplas = ()
+    lista_tuplas = []
     for x in range(1, n + 1):
+        # 4 colores por frasco
         for y in range(1, 5):
-            tupla_tuplas += ((x, y),)
-    return tupla_tuplas
+            lista_tuplas.append((x, y))
+    return lista_tuplas
 
 def generar_restricciones(variables, cantidad_colores):
     restricciones = []
     restricciones.append((variables, solo_4))
     restricciones.append((variables, todos_al_fondo))
+    #restricciones.append((variables, que_no_haya_6))
 
     #Agrupamos los cuartos por frasco
     frascos = [[] for _ in range(cantidad_colores)]
@@ -25,6 +30,7 @@ def generar_restricciones(variables, cantidad_colores):
 
     for frasco in frascos:
         restricciones.append((frasco, no_resuelto))
+        restricciones.append((frasco, esta_completo))
 
     #Dividimos las variables en frascos puntuales, para que las restricciones no sean completamente globales
     for index, frasco in enumerate(frascos):
@@ -32,17 +38,16 @@ def generar_restricciones(variables, cantidad_colores):
         if index < cantidad_colores - 1:
             cuartos_adyacentes = frasco.copy()
             cuartos_adyacentes.extend(frascos[index + 1])
-            cuartos_adyacentes = tuple(cuartos_adyacentes)
             restricciones.append((cuartos_adyacentes, compartir_color))
             restricciones.append((cuartos_adyacentes, que_no_haya_6))
 
     #Genero todas las combinaciones de frascos
     combinaciones_de_frascos = combinations(frascos, 2)
     for combinacion in combinaciones_de_frascos:
-        cuartos_de_combinacion = ()
+        cuartos_de_combinacion = []
         for frasco in combinacion:
             for cuarto in frasco:
-                cuartos_de_combinacion += ((cuarto),)
+                cuartos_de_combinacion.append(cuarto)
         restricciones.append((cuartos_de_combinacion, todos_diferentes))
 
     return restricciones
@@ -64,7 +69,16 @@ def solo_4(vars, vals):
 #Verifica que un frasco no este resuelto (tenga los 4 colores iguales)
 def no_resuelto(vars, vals):
     colores = vals
-    return len(set(colores)) != 1
+    if len(set(colores)) == 1:
+            return False
+    return True
+
+#Verifica que un frasco esta completo (tiene 4 colores)
+def esta_completo(vars, vals):
+    colores = vals
+    if len(colores) != 4:
+            return False
+    return True
 
 #Verifica que un color no tenga todos sus cuartos en el fondo
 def todos_al_fondo(vars, vals):
@@ -132,15 +146,13 @@ def armar_nivel(colores, contenidos_parciales):
             dominio[(indice_frasco + 1, indice + 1)] = [color]
 
     restricciones = generar_restricciones(variables, cantidad_colores)
-
-    #variables, dominio, restricciones = convert_to_binary(variables, dominio, restricciones)
     
     problema = CspProblem(variables, dominio, restricciones)
     
-    #solucion = backtrack(problema)
+    #solucion = backtrack(problema, variable_heuristic=MOST_CONSTRAINED_VARIABLE, value_heuristic=LEAST_CONSTRAINING_VALUE)
     #Con 47000 como limite de iteraciones llega justo
     #Con 45000 tambien
-    solucion = min_conflicts(problema, iterations_limit=50000)
+    solucion = min_conflicts(problema, iterations_limit=45000)
 
     frascos_armados = []
     

@@ -1,6 +1,10 @@
 from simpleai.search import (
     CspProblem,
     min_conflicts,
+    backtrack,
+    MOST_CONSTRAINED_VARIABLE,
+    LEAST_CONSTRAINING_VALUE,
+    HIGHEST_DEGREE_VARIABLE
     )
 
 from itertools import combinations
@@ -14,7 +18,11 @@ def generar_variables(n):
 
 def generar_restricciones(variables, cantidad_colores):
     restricciones = []
-    restricciones.append((variables, solo_4))
+
+    #Genero todas las combinaciones de 5 cuartos
+    combinaciones_de_cuartos = combinations(variables, 5)
+    for combinacion in combinaciones_de_cuartos:
+        restricciones.append((combinacion, solo_4))
 
     #Agrupamos los cuartos por frasco
     frascos = [[] for _ in range(cantidad_colores)]
@@ -54,18 +62,14 @@ def generar_restricciones(variables, cantidad_colores):
     return restricciones
 
 #------------------RESTRICCIONES------------------
-#Que solo haya 4 cuartos de cada color
-def solo_4(vars, vals): 
-    colores = {}
-    for valor in vals:
-        if valor in colores:
-            colores[valor] += 1
-        else:
-            colores[valor] = 1
-    for cantidad_apariciones in colores.values():
-        if cantidad_apariciones != 4:
-            return False
-    return True
+#Que no haya mas de 4 cuartos de cada color
+def solo_4(vars, vals):
+    colores = []
+    for color in vals:
+        if color not in colores:
+            colores.append(color)
+    
+    return len(colores) > 1
 
 #Verifica que un frasco no este resuelto (tenga los 4 colores iguales)
 def no_resuelto(vars, vals):
@@ -132,15 +136,10 @@ def armar_nivel(colores, contenidos_parciales):
             dominio[(indice_frasco + 1, indice + 1)] = [color]
 
     restricciones = generar_restricciones(variables, cantidad_colores)
-
-    #variables, dominio, restricciones = convert_to_binary(variables, dominio, restricciones)
     
     problema = CspProblem(variables, dominio, restricciones)
     
-    #solucion = backtrack(problema)
-    #Con 47000 como limite de iteraciones llega justo
-    #Con 45000 tambien
-    solucion = min_conflicts(problema, iterations_limit=45000)
+    solucion = backtrack(problema, variable_heuristic=MOST_CONSTRAINED_VARIABLE)
 
     frascos_armados = []
     

@@ -15,7 +15,6 @@ def generar_variables(n):
 def generar_restricciones(variables, cantidad_colores):
     restricciones = []
     restricciones.append((variables, solo_4))
-    restricciones.append((variables, todos_al_fondo))
 
     #Agrupamos los cuartos por frasco
     frascos = [[] for _ in range(cantidad_colores)]
@@ -45,6 +44,13 @@ def generar_restricciones(variables, cantidad_colores):
                 cuartos_de_combinacion += ((cuarto),)
         restricciones.append((cuartos_de_combinacion, todos_diferentes))
 
+    #Obtengo las variables que representan los fondos de los frascos
+    fondos = []
+    for cuarto in variables:
+        if cuarto[1] == 1:
+            fondos.append(cuarto)
+    restricciones.append((fondos, todos_al_fondo))
+
     return restricciones
 
 #------------------RESTRICCIONES------------------
@@ -67,16 +73,10 @@ def no_resuelto(vars, vals):
     return len(set(colores)) != 1
 
 #Verifica que un color no tenga todos sus cuartos en el fondo
-def todos_al_fondo(vars, vals):
-    #Obtengo una lista con los colores en el fondo de los frascos  
-    colores_fondo = []
-    for cuarto, color in zip(vars, vals):
-        if cuarto[1] == 1:
-            colores_fondo.append(color)
-    
+def todos_al_fondo(vars, vals):    
     #Contamos las apariciones de colores en el fondo
     conteo = {}
-    for color in colores_fondo:
+    for color in vals:
         if color in conteo:
             conteo[color] += 1
         else:

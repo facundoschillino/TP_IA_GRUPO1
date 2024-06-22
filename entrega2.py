@@ -1,10 +1,7 @@
 from simpleai.search import (
     CspProblem,
-    min_conflicts,
     backtrack,
     MOST_CONSTRAINED_VARIABLE,
-    LEAST_CONSTRAINING_VALUE,
-    HIGHEST_DEGREE_VARIABLE
     )
 
 from itertools import combinations
@@ -19,11 +16,13 @@ def generar_variables(n):
 def generar_restricciones(variables, cantidad_colores):
     restricciones = []
 
+    #SOLO_4
     #Genero todas las combinaciones de 5 cuartos
     combinaciones_de_cuartos = combinations(variables, 5)
     for combinacion in combinaciones_de_cuartos:
         restricciones.append((combinacion, solo_4))
 
+    #NO_RESUELTO
     #Agrupamos los cuartos por frasco
     frascos = [[] for _ in range(cantidad_colores)]
     for cuarto in variables:
@@ -33,6 +32,16 @@ def generar_restricciones(variables, cantidad_colores):
     for frasco in frascos:
         restricciones.append((frasco, no_resuelto))
 
+    #TODOS_AL_FONDO
+    #Obtengo las variables que representan los fondos de los frascos
+    fondos = []
+    for cuarto in variables:
+        if cuarto[1] == 1:
+            fondos.append(cuarto)
+    restricciones.append((fondos, todos_al_fondo))
+
+    #COMPARTIR_COLOR
+    #QUE_NO_HAYA_6
     #Dividimos las variables en frascos puntuales, para que las restricciones no sean completamente globales
     for index, frasco in enumerate(frascos):
         #No tenemos en cuenta el ultimo frasco porque no tiene adyacente a la derecha
@@ -43,6 +52,7 @@ def generar_restricciones(variables, cantidad_colores):
             restricciones.append((cuartos_adyacentes, compartir_color))
             restricciones.append((cuartos_adyacentes, que_no_haya_6))
 
+    #TODOS_DIFERENTES
     #Genero todas las combinaciones de frascos
     combinaciones_de_frascos = combinations(frascos, 2)
     for combinacion in combinaciones_de_frascos:
@@ -51,13 +61,6 @@ def generar_restricciones(variables, cantidad_colores):
             for cuarto in frasco:
                 cuartos_de_combinacion += ((cuarto),)
         restricciones.append((cuartos_de_combinacion, todos_diferentes))
-
-    #Obtengo las variables que representan los fondos de los frascos
-    fondos = []
-    for cuarto in variables:
-        if cuarto[1] == 1:
-            fondos.append(cuarto)
-    restricciones.append((fondos, todos_al_fondo))
 
     return restricciones
 
